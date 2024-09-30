@@ -5,15 +5,14 @@ const port = 5000;
 const Parser = require('rss-parser');
 const parser = new Parser();
 
-app.use(express.static(path.join('static')));
-
 /*app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
 })*/
 
+app.use(express.static(path.join(__dirname, '..', 'static')));
 
 app.get('/', (req, res) => {
-    res.sendFile('index.html');
+    res.sendFile(path.join(__dirname, '..', 'static', 'index.html'));
 });
 
 app.get('/test', (req, res) => {
@@ -23,7 +22,6 @@ app.get('/test', (req, res) => {
 app.put('/user', (req, res) => {
     res.send('Got a PUT request at /user')
 });
-
 
 
 module.exports = app;
