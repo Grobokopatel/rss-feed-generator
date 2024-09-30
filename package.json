@@ -2,10 +2,10 @@
   "name": "rss_reader",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "app": "node ./api/index.js"
+    "app": "echo 123"
   },
   "keywords": [],
   "author": "",
