@@ -37,7 +37,7 @@ app.get('/my_feeds/:id', async (req, res) => {
 
     let {rows} = queryResult;
     if (rows.length === 0) {
-        res.status(404).send(`Нет ленты с таким id:${req.params.id}`);
+        res.status(404).send(`Нет ленты с таким id: ${req.params.id}`);
         return;
     } else {
         let {id, url, selectors, last_time_updated, content} = rows[0];
@@ -66,7 +66,7 @@ app.get('/my_feeds/:id', async (req, res) => {
             };
 
             let imageUrl = undefined;
-            if (selectors.image !== null) {
+            if (selectors.image) {
                 let imageElement = cheerioAPI(selectors.image);
                 imageUrl = imageElement.prop('src');
                 if (imageUrl === undefined) {
