@@ -1,0 +1,11 @@
+* {
+    font-size: 20px;
+}
+
+body {
+    background-color: gray;
+}
+
+th {
+    text-align: left;
+}

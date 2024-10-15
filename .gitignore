@@ -1,3 +1,7 @@
+# Мой файл для тестов
+test.js
+
+
 # Rider settings
 .idea/
 
@@ -132,3 +136,5 @@ dist
 .yarn/install-state.gz
 .pnp.*
 .vercel
+
+

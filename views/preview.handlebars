@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Лента</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div>
+    <label>Лента: </label>
+    <a id='feed-url' href="{{url}}/">{{url}}/</a>
+    <input style="transition: background-color 0.3s ease;" type="button" value="Скопировать">
+</div>
+
+<script>
+    document.querySelector('input').addEventListener('click', copyUrl);
+
+    function copyUrl() {
+        let feedUrlElement = document.getElementById('feed-url');
+        navigator.clipboard.writeText(feedUrlElement.href);
+        this.style.backgroundColor = 'green';
+        setTimeout(() => {
+            this.style.backgroundColor = 'rgb(240, 240, 240)'
+        }, 100);
+    }
+</script>
+</body>
+</html>

@@ -2,13 +2,56 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Читалка</title>
+    <title>Создавалка</title>
     <link rel="stylesheet" href="styles.css">
+
+    <style>
+        td input {
+            width: 600px;
+        }
+
+        button {
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-    <label>
-        Введите селектор:
-        <input></input>
-    </label>
+<form method="post">
+    <table>
+        <tbody>
+        <tr>
+            <th><label for="url">Сайт: </label></th>
+            <td><input type="url" name="url" id="url" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ" required></td>
+        </tr>
+        <tr>
+            <th><label for="header">Заголовок: </label></th>
+            <td><input name="title" id="header" placeholder="#game_area_purchase_section_add_to_cart_997630 > h1"></td>
+        </tr>
+        <tr>
+            <th><label for="description">Описание: </label></th>
+            <td><input name="description"
+                       id="description"
+                       placeholder="#tabletGrid > div.page_content_ctn > div:nth-child(6) > div.leftcol.game_description_column > div:nth-child(13) > div.game_page_autocollapse.sys_req > div > div > div.game_area_sys_req_rightCol > ul">
+            </td>
+        </tr>
+        <tr>
+            <th><label for="image">Картинка: </label></th>
+            <td><input name="image"
+                       id="image"
+                       placeholder="#tabletGrid > div.page_content_ctn > div.related_items_ctn > div > div:nth-child(1) > div > div.pfPilQ4t9RuI9__rVAFW9 > div > div > div._2M3SnYGvMvplWUC8yGhowo.SliderBody > div > div > div > div:nth-child(2) > div > div > div > div > div > div > a > div:nth-child(1) > div > div._2oW_y7Mm3ihf1XQ0C1VWhx.CapsuleImageCtn > img">
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <div>
+        <button type="button">Протестировать локально</button>
+    </div>
+    <div>
+        <button type="button">Протестировать на сервере</button>
+    </div>
+    <div>
+        <button formmethod="post">Создать ленту</button>
+    </div>
+</form>
 </body>
 </html>

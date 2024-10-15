@@ -3,15 +3,24 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "app": "echo 123"
-  },
+  "scripts": {},
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@ladjs/consolidate": "^1.0.4",
+    "@vercel/postgres": "^0.7.2",
+    "@xmldom/xmldom": "^0.9.3",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "rss-parser": "^3.13.0"
+    "feed": "^4.2.2",
+    "handlebars": "^4.7.8",
+    "xpath": "^0.0.34"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.7.5",
+    "typescript": "^5.6.3"
   }
 }
