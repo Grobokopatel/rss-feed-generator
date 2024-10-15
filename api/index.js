@@ -13,7 +13,7 @@ const urlNode = require('node:url');
 app.engine('handlebars', cons.handlebars);
 app.use(express.urlencoded({extended: true}));
 app.use(express.static(path.join(__dirname, '..', 'static')));
-app.set('views', './views');
+app.set('views', path.join(__dirname, '..', 'views'));
 app.set('view engine', 'handlebars');
 
 
