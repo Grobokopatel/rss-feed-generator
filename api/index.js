@@ -6,7 +6,6 @@ const app = express();
 const {sql} = require('@vercel/postgres');
 const cheerio = require('cheerio');
 const {Feed} = require("feed");
-const Handlebars = require("handlebars");
 const cons = require('@ladjs/consolidate');
 const urlNode = require('node:url');
 
@@ -25,7 +24,7 @@ app.get('/my_feeds/:id', async (req, res) => {
     let queryResult;
     try {
         queryResult = await sql`
-            select url, selectors, last_time_updated, content
+            select id, url, selectors, last_time_updated, content
             from feed
             where id = ${req.params.id};
         `;
@@ -43,51 +42,25 @@ app.get('/my_feeds/:id', async (req, res) => {
         let {id, url, selectors, last_time_updated, content} = rows[0];
         try {
             let cheerioAPI = await cheerio.fromURL(url);
-            let title = cheerioAPI('title').html();
-
-            const feed = new Feed({
-                title: title,
-                description: "Сайт для генерации собственных RSS лент",
-                link: url,
-                language: "ru",
-            });
-
-            let titleHtml = cheerioAPI(selectors.title).html();
-            let descriptionHtml = cheerioAPI(selectors.description).html();
-
-            let lastTimeUpdated = last_time_updated;
-
+            
             let post = {
-                title: titleHtml,
                 link: url,
-                id: url + '#' + +lastTimeUpdated,
-                description: descriptionHtml,
-                date: lastTimeUpdated,
+                title: cheerioAPI(selectors.title).html(),
+                description: cheerioAPI(selectors.description).html(),
             };
 
             let imageUrl = undefined;
             if (selectors.image) {
-                let imageElement = cheerioAPI(selectors.image);
-                imageUrl = imageElement.prop('src');
-                if (imageUrl === undefined) {
-                    imageUrl = imageElement.find('img[src]').prop('src');
-                }
-
-                imageUrl = urlNode.resolve(url, imageUrl);
-                let response = await fetch(imageUrl, {method: 'HEAD'});
-                let headers = response.headers;
-
-                post.image = {
-                    url: imageUrl,
-                    type: headers.get('content-type'),
-                    length: parseInt((headers.get('content-length'))),
-                };
+                post.image = await getImageEnclosure(selectors.image, url, cheerioAPI());
+                imageUrl = post.image.url;
             }
 
-            let currentContent = titleHtml + ';' + descriptionHtml + ';' + imageUrl;
+            let currentContent = post.title + ';' + post.description + ';' + imageUrl;
+
+            let lastTimeUpdated = last_time_updated;
             if (content !== currentContent) {
                 lastTimeUpdated = new Date();
-
+                
                 await sql`
                     update feed
                     set last_time_updated = ${lastTimeUpdated},
@@ -96,10 +69,19 @@ app.get('/my_feeds/:id', async (req, res) => {
                 `;
             }
 
+            post.id = url + '#' + +lastTimeUpdated;
+            post.date = lastTimeUpdated;
+
+            const feed = new Feed({
+                title: cheerioAPI('title').html(),
+                description: "Сайт для генерации собственных RSS лент",
+                link: url,
+                language: "ru",
+            });
+            
             feed.addItem(post);
             let rssPost = feed.rss2();
             res.contentType('text/xml').send(rssPost);
-            //console.log(process.env.NEXT_PUBLIC_URL);
             return;
         } catch (error) {
             console.error(error);
@@ -108,6 +90,24 @@ app.get('/my_feeds/:id', async (req, res) => {
         }
     }
 });
+
+async function getImageEnclosure(imageSelector, url, cheerioAPI) {
+    let imageElement = cheerioAPI(imageSelector);
+    let imageUrl = imageElement.prop('src');
+    if (imageUrl === undefined) {
+        imageUrl = imageElement.find('img[src]').prop('src');
+    }
+
+    imageUrl = urlNode.resolve(url, imageUrl);
+    let imageInfo = await fetch(imageUrl, {method: 'HEAD'});
+    let headers = imageInfo.headers;
+
+    return {
+        url: imageUrl,
+        type: headers.get('content-type'),
+        length: parseInt((headers.get('content-length'))),
+    };
+}
 
 app.post('/', async (req, res) => {
     let body = req.body;
