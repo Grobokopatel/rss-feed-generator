@@ -6,6 +6,10 @@
     <link rel="stylesheet" href="styles.css">
 
     <style>
+        * {
+            font-size: 20px;    
+        }
+        
         td input {
             width: 600px;
         }
@@ -21,7 +25,8 @@
         <tbody>
         <tr>
             <th><label for="url">Сайт: </label></th>
-            <td><input type="url" name="url" id="url" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ" required></td>
+            <td><input type="url" name="url" id="url" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                       required></td>
         </tr>
         <tr>
             <th><label for="header">Заголовок: </label></th>
@@ -43,15 +48,13 @@
         </tr>
         </tbody>
     </table>
-    <p style="font-size: 22px"> Все поля кроме сайта опциональные, но должен присутствовать хотя бы заголовок или описание. </p>
+    <p style="font-size: 22px"> Все поля кроме сайта опциональные, но должен присутствовать хотя бы заголовок или
+        описание. </p>
     <div>
-        <button type="button">Протестировать локально</button>
+        <button formtarget="_blank" formaction="/preview">Предпросмотр</button>
     </div>
     <div>
-        <button type="button">Протестировать на сервере</button>
-    </div>
-    <div>
-        <button formmethod="post">Создать ленту</button>
+        <button>Создать ленту</button>
     </div>
 </form>
 </body>

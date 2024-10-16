@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Предпросмотр</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        div {
+            border: solid 1px #d1d1d1;
+            border-radius: 4px;
+            background: white;
+            padding: 2px 3px 2px 3px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+<h1>Примерно так будет выглядеть запись в RSS агрегаторе</h1>
+
+<h2>Название:</h2>
+<div>{{title}}</div>
+<h2>Картинка:</h2>
+<img alt='Картинка из ленты' src="{{{image}}}">
+<h2>Описание:</h2>
+<div>{{{description}}}</div>
+</body>
+</html>
