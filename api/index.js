@@ -45,7 +45,7 @@ app.get('/my_feeds/:id', async (req, res) => {
             
             let post = {
                 link: url,
-                title: cheerioAPI(selectors.title).html(),
+                title: cheerioAPI(selectors.title).prop('innerText'),
                 description: cheerioAPI(selectors.description).html(),
             };
 
