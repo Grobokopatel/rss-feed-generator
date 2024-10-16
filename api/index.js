@@ -51,7 +51,7 @@ app.get('/my_feeds/:id', async (req, res) => {
 
             let imageUrl = undefined;
             if (selectors.image) {
-                post.image = await getImageEnclosure(selectors.image, url, cheerioAPI());
+                post.image = await getImageEnclosure(selectors.image, url, cheerioAPI);
                 imageUrl = post.image.url;
             }
 
