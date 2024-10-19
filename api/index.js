@@ -8,6 +8,7 @@ const cheerio = require('cheerio');
 const {Feed} = require("feed");
 const cons = require('@ladjs/consolidate');
 const urlNode = require('node:url');
+const {HttpsProxyAgent} = require("https-proxy-agent");
 
 app.engine('handlebars', cons.handlebars);
 app.use(express.urlencoded({extended: true}));
@@ -142,7 +143,8 @@ app.post('/', async (req, res) => {
     }
 
     res.render('preview', {
-        url: `/my_feeds/${queryResult.rows[0].id}`
+        path: `/my_feeds/${queryResult.rows[0].id}`,
+        url: `https://${process.env.VERCEL_URL}/${queryResult.rows[0].id}`
     });
 });
 
@@ -157,5 +159,21 @@ app.post('/preview', async (req, res) => {
     } = await getTitleDescriptionAndImageEnclosure(cheerioAPI, selectors, body.url);
     res.render('example', {title, description, image: imageEnclosure?.url});
 });
+
+app.get('/proxy_check', async (req, res) => {
+    const agent = new HttpsProxyAgent('http://45.92.177.60:8080');
+    let response = await fetch('https://dezk-ur.ru/news/company', {agent});
+    let text = await response.text();
+    
+    console.log(process.env);
+    res.send(text);
+});
+
+app.get('/system_variables_check', async (req, res) => {
+    console.log(process.env);
+    let currentUrl = `https://${process.env.VERCEL_URL}`;
+    res.send(currentUrl + '\n\n' + process.env);
+});
+
 module.exports = app;
 

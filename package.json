@@ -16,6 +16,7 @@
     "express": "^4.19.2",
     "feed": "^4.2.2",
     "handlebars": "^4.7.8",
+    "https-proxy-agent": "^7.0.5",
     "xpath": "^0.0.34"
   },
   "devDependencies": {
