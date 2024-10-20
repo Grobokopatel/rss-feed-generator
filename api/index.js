@@ -165,14 +165,14 @@ app.get('/proxy_check', async (req, res) => {
     let response = await fetch('https://dezk-ur.ru/news/company', {agent});
     let text = await response.text();
     
-    console.log(process.env);
     res.send(text);
 });
 
 app.get('/system_variables_check', async (req, res) => {
     console.log(process.env);
-    let currentUrl = `https://${process.env.VERCEL_URL}`;
-    res.send(currentUrl + '\n\n' + process.env);
+    let env = process.env;
+    env.url = `https://${process.env.VERCEL_URL}`;
+    res.json(env);
 });
 
 module.exports = app;
