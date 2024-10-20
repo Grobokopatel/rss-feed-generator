@@ -1,14 +1,25 @@
-require('dotenv').config();
+import dotenv from 'dotenv';
 
-const express = require('express');
-const path = require('node:path');
+dotenv.config();
+
+import {fileURLToPath} from 'url';
+import {dirname} from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+import {HttpsProxyAgent} from "https-proxy-agent";
+import fetch from 'node-fetch';
+import urlNode from "node:url";
+import cons from "@ladjs/consolidate";
+import {Feed} from "feed";
+import * as cheerio from 'cheerio';
+import {sql} from "@vercel/postgres";
+import path from "node:path";
+import express from "express";
+
 const app = express();
-const {sql} = require('@vercel/postgres');
-const cheerio = require('cheerio');
-const {Feed} = require("feed");
-const cons = require('@ladjs/consolidate');
-const urlNode = require('node:url');
-const {HttpsProxyAgent} = require("https-proxy-agent");
+
 
 app.engine('handlebars', cons.handlebars);
 app.use(express.urlencoded({extended: true}));
@@ -161,10 +172,10 @@ app.post('/preview', async (req, res) => {
 });
 
 app.get('/proxy_check', async (req, res) => {
-    const agent = new HttpsProxyAgent('http://45.92.177.60:8080');
-    let response = await fetch('https://dezk-ur.ru/news/company', {agent});
+    const agent = new HttpsProxyAgent('http://178.177.54.157:8080');
+    let response = await fetch('https://webhook.site/6f1c73de-153b-4666-8751-3ea5778f5189', {agent});
     let text = await response.text();
-    
+
     res.send(text);
 });
 
@@ -175,5 +186,8 @@ app.get('/system_variables_check', async (req, res) => {
     res.json(env);
 });
 
-module.exports = app;
+app.get('/current_directory', async (req, res) => {
+    res.json({__dirname, process_cwd: process.cwd()});
+});
 
+export default app;
