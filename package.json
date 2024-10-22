@@ -19,7 +19,8 @@
     "handlebars": "^4.7.8",
     "https-proxy-agent": "^7.0.5",
     "node-fetch": "^3.3.2",
-    "xpath": "^0.0.34"
+    "xpath": "^0.0.34",
+    "zenrows": "^2.0.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",

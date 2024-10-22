@@ -171,23 +171,5 @@ app.post('/preview', async (req, res) => {
     res.render('example', {title, description, image: imageEnclosure?.url});
 });
 
-app.get('/proxy_check', async (req, res) => {
-    const agent = new HttpsProxyAgent('http://178.177.54.157:8080');
-    let response = await fetch('https://webhook.site/6f1c73de-153b-4666-8751-3ea5778f5189', {agent});
-    let text = await response.text();
-
-    res.send(text);
-});
-
-app.get('/system_variables_check', async (req, res) => {
-    console.log(process.env);
-    let env = process.env;
-    env.url = `https://${process.env.VERCEL_URL}`;
-    res.json(env);
-});
-
-app.get('/current_directory', async (req, res) => {
-    res.json({__dirname, process_cwd: process.cwd()});
-});
 
 export default app;
