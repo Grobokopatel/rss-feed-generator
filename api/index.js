@@ -1,6 +1,4 @@
-import dotenv from 'dotenv';
-
-dotenv.config();
+import 'dotenv/config';
 
 import {fileURLToPath} from 'url';
 import {dirname} from 'path';
@@ -9,7 +7,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 import {HttpsProxyAgent} from "https-proxy-agent";
-import fetch from 'node-fetch';
+import {HttpProxyAgent} from 'http-proxy-agent';
+import fetch, {FetchError} from 'node-fetch';
 import urlNode from "node:url";
 import cons from "@ladjs/consolidate";
 import {Feed} from "feed";
@@ -17,6 +16,11 @@ import * as cheerio from 'cheerio';
 import {sql} from "@vercel/postgres";
 import path from "node:path";
 import express from "express";
+import {ZenRows} from "zenrows";
+import * as util from 'node:util';
+
+const ZENROWS_API_KEY = process.env.ZENROWS_API_KEY;
+const ZENROWS_RPOXY_URL = `http://${ZENROWS_API_KEY}:premium_proxy=true&proxy_country=ru&original_status=true@api.zenrows.com:8001`;
 
 const app = express();
 
@@ -53,7 +57,9 @@ app.get('/my_feeds/:id', async (req, res) => {
     } else {
         let {id, url, selectors, last_time_updated, content} = rows[0];
         try {
-            let cheerioAPI = await cheerio.fromURL(url);
+            let response = await tryFetchElseFetchWithProxy(url);
+            let html = await response.text();
+            let $cheerioAPI = await cheerio.load(html);
 
             let post = {
                 link: url
@@ -63,7 +69,7 @@ app.get('/my_feeds/:id', async (req, res) => {
                 title,
                 description,
                 imageEnclosure
-            } = await getTitleDescriptionAndImageEnclosure(cheerioAPI, selectors, url);
+            } = await getTitleDescriptionAndImageEnclosure($cheerioAPI, selectors, url);
 
             post.title = title;
             post.description = description;
@@ -87,7 +93,7 @@ app.get('/my_feeds/:id', async (req, res) => {
             post.date = lastTimeUpdated;
 
             const feed = new Feed({
-                title: cheerioAPI('title').html(),
+                title: $cheerioAPI('title').html(),
                 description: "Сайт для генерации собственных RSS лент",
                 link: url,
                 language: "ru",
@@ -105,27 +111,30 @@ app.get('/my_feeds/:id', async (req, res) => {
     }
 });
 
-async function getTitleDescriptionAndImageEnclosure(cheerioAPI, selectors, url) {
+async function getTitleDescriptionAndImageEnclosure($cheerioAPI, selectors, url) {
     return {
-        title: cheerioAPI(selectors.title).prop('innerText'),
-        description: cheerioAPI(selectors.description).html(),
-        imageEnclosure: await getImageEnclosure(selectors.image, url, cheerioAPI),
+        title: $cheerioAPI(selectors.title).prop('innerText'),
+        description: $cheerioAPI(selectors.description).html(),
+        imageEnclosure: await getImageEnclosure(selectors.image, url, $cheerioAPI),
     };
 }
 
-async function getImageEnclosure(imageSelector, url, cheerioAPI) {
+async function getImageEnclosure(imageSelector, url, $cheerioAPI) {
     if (!imageSelector)
         return null;
 
-    let imageElement = cheerioAPI(imageSelector);
+    let imageElement = $cheerioAPI(imageSelector);
     let imageUrl = imageElement.prop('src');
     if (imageUrl === undefined) {
         imageUrl = imageElement.find('img[src]').prop('src');
     }
 
     imageUrl = urlNode.resolve(url, imageUrl);
-    let imageInfo = await fetch(imageUrl, {method: 'HEAD'});
+    let imageInfo = await tryFetchElseFetchWithProxy(imageUrl, {method: 'HEAD'});
     let headers = imageInfo.headers;
+    
+    console.log(headers);
+    console.log(imageInfo.status);
 
     return {
         url: imageUrl,
@@ -161,15 +170,44 @@ app.post('/', async (req, res) => {
 
 app.post('/preview', async (req, res) => {
     let body = req.body;
-    let cheerioAPI = await cheerio.fromURL(body.url);
+    let response = await tryFetchElseFetchWithProxy(body.url);
+    let html = await response.text();
+    let $cheerioAPI = await cheerio.load(html);
     let selectors = {title: body.title, description: body.description, image: body.image};
     let {
         title,
         description,
         imageEnclosure
-    } = await getTitleDescriptionAndImageEnclosure(cheerioAPI, selectors, body.url);
+    } = await getTitleDescriptionAndImageEnclosure($cheerioAPI, selectors, body.url);
     res.render('example', {title, description, image: imageEnclosure?.url});
 });
 
+async function tryFetchElseFetchWithProxy(url, options = {}) {
+    try {
+        let response = await fetch(url, options);
+        if (!response.ok) {
+            throw new Error(`Got response code outside of 200-299: ${response.status} ${response.statusText}.\n` +
+            `Headers: ${util.inspect(response.headers)}`);
+        }
+        
+        return response;
+    } catch (error) {
+        console.error(error);
+        options.agent = new HttpProxyAgent(ZENROWS_RPOXY_URL);
+        options.method = 'GET';
+        let response = await fetch(url, options);
+        
+        if (!response.ok) {
+            throw new Error(`Got response code outside of 200-299: ${response.status} ${response.statusText}.\n` +
+            `Headers: ${util.inspect(response.headers)}`);
+        }
+        
+        let headers = response.headers;
+        headers.set('content-length', headers.get('zr-content-length'));
+        headers.set('content-type', headers.get('zr-content-type'));
+        
+        return response;
+    }
+}
 
 export default app;

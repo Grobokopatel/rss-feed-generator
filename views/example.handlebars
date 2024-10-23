@@ -17,11 +17,19 @@
 <body>
 <h1>Примерно так будет выглядеть запись в RSS агрегаторе</h1>
 
+{{#if title}}
 <h2>Название:</h2>
 <div>{{title}}</div>
+{{/if}}
+
+{{#if image}}
 <h2>Картинка:</h2>
 <img alt='Картинка из ленты' src="{{{image}}}">
+{{/if}}
+
+{{#if description}}
 <h2>Описание:</h2>
 <div>{{{description}}}</div>
+{{/if}}
 </body>
 </html>
