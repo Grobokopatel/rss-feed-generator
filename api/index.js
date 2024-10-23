@@ -1,7 +1,3 @@
-import dotenv from 'dotenv';
-
-dotenv.config();
-
 import {fileURLToPath} from 'url';
 import {dirname} from 'path';
 
@@ -9,6 +5,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 import {HttpsProxyAgent} from "https-proxy-agent";
+import {HttpProxyAgent} from 'http-proxy-agent';
 import fetch from 'node-fetch';
 import urlNode from "node:url";
 import cons from "@ladjs/consolidate";
@@ -17,6 +14,7 @@ import * as cheerio from 'cheerio';
 import {sql} from "@vercel/postgres";
 import path from "node:path";
 import express from "express";
+import {ZenRows} from "zenrows";
 
 const app = express();
 
@@ -53,7 +51,9 @@ app.get('/my_feeds/:id', async (req, res) => {
     } else {
         let {id, url, selectors, last_time_updated, content} = rows[0];
         try {
-            let cheerioAPI = await cheerio.fromURL(url);
+            let response = await tryFetchElseFetchWithProxy(url);
+            let html = await response.text();
+            let $cheerioAPI = await cheerio.load(html);
 
             let post = {
                 link: url
@@ -63,7 +63,7 @@ app.get('/my_feeds/:id', async (req, res) => {
                 title,
                 description,
                 imageEnclosure
-            } = await getTitleDescriptionAndImageEnclosure(cheerioAPI, selectors, url);
+            } = await getTitleDescriptionAndImageEnclosure($cheerioAPI, selectors, url);
 
             post.title = title;
             post.description = description;
@@ -87,7 +87,7 @@ app.get('/my_feeds/:id', async (req, res) => {
             post.date = lastTimeUpdated;
 
             const feed = new Feed({
-                title: cheerioAPI('title').html(),
+                title: $cheerioAPI('title').html(),
                 description: "Сайт для генерации собственных RSS лент",
                 link: url,
                 language: "ru",
@@ -105,26 +105,26 @@ app.get('/my_feeds/:id', async (req, res) => {
     }
 });
 
-async function getTitleDescriptionAndImageEnclosure(cheerioAPI, selectors, url) {
+async function getTitleDescriptionAndImageEnclosure($cheerioAPI, selectors, url) {
     return {
-        title: cheerioAPI(selectors.title).prop('innerText'),
-        description: cheerioAPI(selectors.description).html(),
-        imageEnclosure: await getImageEnclosure(selectors.image, url, cheerioAPI),
+        title: $cheerioAPI(selectors.title).prop('innerText'),
+        description: $cheerioAPI(selectors.description).html(),
+        imageEnclosure: await getImageEnclosure(selectors.image, url, $cheerioAPI),
     };
 }
 
-async function getImageEnclosure(imageSelector, url, cheerioAPI) {
+async function getImageEnclosure(imageSelector, url, $cheerioAPI) {
     if (!imageSelector)
         return null;
 
-    let imageElement = cheerioAPI(imageSelector);
+    let imageElement = $cheerioAPI(imageSelector);
     let imageUrl = imageElement.prop('src');
     if (imageUrl === undefined) {
         imageUrl = imageElement.find('img[src]').prop('src');
     }
 
     imageUrl = urlNode.resolve(url, imageUrl);
-    let imageInfo = await fetch(imageUrl, {method: 'HEAD'});
+    let imageInfo = await tryFetchElseFetchWithProxy(imageUrl, {method: 'HEAD'});
     let headers = imageInfo.headers;
 
     return {
@@ -161,15 +161,60 @@ app.post('/', async (req, res) => {
 
 app.post('/preview', async (req, res) => {
     let body = req.body;
-    let cheerioAPI = await cheerio.fromURL(body.url);
+    let response = await tryFetchElseFetchWithProxy(body.url);
+    let html = await response.text();
+    let $cheerioAPI = await cheerio.load(html);
     let selectors = {title: body.title, description: body.description, image: body.image};
     let {
         title,
         description,
         imageEnclosure
-    } = await getTitleDescriptionAndImageEnclosure(cheerioAPI, selectors, body.url);
+    } = await getTitleDescriptionAndImageEnclosure($cheerioAPI, selectors, body.url);
     res.render('example', {title, description, image: imageEnclosure?.url});
 });
 
+
+app.get('/proxy_check', async (req, res) => {
+    const agent = new HttpsProxyAgent('http://7dfdf47b924272ba03a425f8311de632c672a69d:premium_proxy=true&proxy_country=ru@api.zenrows.com:8001');
+    //let headers = {"User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36'};
+    let response = await fetch('https://dezk-ur.ru/news/company', {agent});
+    let text = await response.text();
+
+    res.send(text);
+});
+
+app.get('/zenrows_proxy_check', async (req, res) => {
+    const client = new ZenRows("7dfdf47b924272ba03a425f8311de632c672a69d");
+    const url = "https://dezk-ur.ru/news/company";
+
+    try {
+        const request = await client.get(url, {
+            "premium_proxy": "true",
+            "proxy_country": "ru",
+            "original_status": "true"
+        });
+        const data = await request.text();
+        res.send(data);
+        return;
+    } catch (error) {
+        console.error(error.message);
+        if (error.response) {
+            console.error(error.response.data);
+        }
+
+        res.json(JSON.stringify(error));
+        return;
+    }
+});
+
+function tryFetchElseFetchWithProxy(url, options = {}) {
+    try {
+        return fetch(url, options);
+    } catch (error) {
+        console.error(error);
+        options.agent = new HttpProxyAgent('http://7dfdf47b924272ba03a425f8311de632c672a69d:premium_proxy=true&proxy_country=ru@api.zenrows.com:8001');
+        return fetch(url, options);
+    }
+}
 
 export default app;
