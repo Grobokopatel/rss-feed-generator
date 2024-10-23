@@ -163,6 +163,8 @@ app.post('/preview', async (req, res) => {
     let body = req.body;
     console.error(JSON.stringify(body));
     console.error(body);
+    console.log(JSON.stringify(body));
+    console.log(body);
     let response = await tryFetchElseFetchWithProxy(body.url);
     let html = await response.text();
     let $cheerioAPI = await cheerio.load(html);
