@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 import {fileURLToPath} from 'url';
 import {dirname} from 'path';
 
@@ -18,7 +20,7 @@ import {ZenRows} from "zenrows";
 import * as util from 'node:util';
 
 const ZENROWS_API_KEY = process.env.ZENROWS_API_KEY;
-const ZENROWS_RPOXY_URL = `http://${ZENROWS_API_KEY}:premium_proxy=true&proxy_country=ru@api.zenrows.com:8001`;
+const ZENROWS_RPOXY_URL = `http://${ZENROWS_API_KEY}:premium_proxy=true&proxy_country=ru&original_status=true@api.zenrows.com:8001`;
 
 const app = express();
 
@@ -130,6 +132,9 @@ async function getImageEnclosure(imageSelector, url, $cheerioAPI) {
     imageUrl = urlNode.resolve(url, imageUrl);
     let imageInfo = await tryFetchElseFetchWithProxy(imageUrl, {method: 'HEAD'});
     let headers = imageInfo.headers;
+    
+    console.log(headers);
+    console.log(imageInfo.status);
 
     return {
         url: imageUrl,
@@ -196,6 +201,10 @@ async function tryFetchElseFetchWithProxy(url, options = {}) {
             throw new Error(`Got response code outside of 200-299: ${response.status} ${response.statusText}.\n` +
             `Headers: ${util.inspect(response.headers)}`);
         }
+        
+        let headers = response.headers;
+        headers.set('content-length', headers.get('zr-content-length'));
+        headers.set('content-type', headers.get('zr-content-type'));
         
         return response;
     }
