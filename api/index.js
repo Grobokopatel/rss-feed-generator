@@ -19,6 +19,11 @@ import {ZenRows} from "zenrows";
 const ZENROWS_API_KEY = process.env.ZENROWS_API_KEY;
 const ZENROWS_RPOXY_URL = `http://${ZENROWS_API_KEY}:premium_proxy=true&proxy_country=ru@api.zenrows.com:8001`;
 
+console.log(process.env.ZENROWS_API_KEY);
+console.log(ZENROWS_API_KEY);
+console.log(ZENROWS_RPOXY_URL);
+
+
 const app = express();
 
 
@@ -126,7 +131,6 @@ async function getImageEnclosure(imageSelector, url, $cheerioAPI) {
         imageUrl = imageElement.find('img[src]').prop('src');
     }
 
-    console.log(url, imageUrl);
     imageUrl = urlNode.resolve(url, imageUrl);
     let imageInfo = await tryFetchElseFetchWithProxy(imageUrl, {method: 'HEAD'});
     let headers = imageInfo.headers;
@@ -165,7 +169,6 @@ app.post('/', async (req, res) => {
 
 app.post('/preview', async (req, res) => {
     let body = req.body;
-    console.log(body);
     let response = await tryFetchElseFetchWithProxy(body.url);
     let html = await response.text();
     let $cheerioAPI = await cheerio.load(html);
@@ -216,8 +219,8 @@ async function tryFetchElseFetchWithProxy(url, options = {}) {
     try {
         let response = await fetch(url, options);
         if (!response.ok) {
-            throw new Error(`Got response code outside of 200-299: ${response.status} ${response.statusText}
-            Headers: ${response.headers}`);
+            throw new Error(`Got response code outside of 200-299: ${response.status} ${response.statusText}\n` +
+            `Headers: ${response.headers}`);
         }
         
         return response;
