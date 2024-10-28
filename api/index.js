@@ -15,14 +15,10 @@ import {sql} from "@vercel/postgres";
 import path from "node:path";
 import express from "express";
 import {ZenRows} from "zenrows";
+import * as util from 'node:util';
 
 const ZENROWS_API_KEY = process.env.ZENROWS_API_KEY;
 const ZENROWS_RPOXY_URL = `http://${ZENROWS_API_KEY}:premium_proxy=true&proxy_country=ru@api.zenrows.com:8001`;
-
-console.log(process.env.ZENROWS_API_KEY);
-console.log(ZENROWS_API_KEY);
-console.log(ZENROWS_RPOXY_URL);
-
 
 const app = express();
 
@@ -181,57 +177,24 @@ app.post('/preview', async (req, res) => {
     res.render('example', {title, description, image: imageEnclosure?.url});
 });
 
-
-app.get('/proxy_check', async (req, res) => {
-    const agent = new HttpsProxyAgent(ZENROWS_RPOXY_URL);
-    //let headers = {"User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36'};
-    let response = await fetch('https://dezk-ur.ru/news/company', {agent});
-    let text = await response.text();
-
-    res.send(text);
-});
-
-app.get('/zenrows_proxy_check', async (req, res) => {
-    const client = new ZenRows(ZENROWS_API_KEY);
-    const url = "https://dezk-ur.ru/news/company";
-
-    try {
-        const request = await client.get(url, {
-            "premium_proxy": "true",
-            "proxy_country": "ru",
-            "original_status": "true"
-        });
-        const data = await request.text();
-        res.send(data);
-        return;
-    } catch (error) {
-        console.error(error.message);
-        if (error.response) {
-            console.error(error.response.data);
-        }
-
-        res.json(JSON.stringify(error));
-        return;
-    }
-});
-
 async function tryFetchElseFetchWithProxy(url, options = {}) {
     try {
         let response = await fetch(url, options);
         if (!response.ok) {
-            throw new Error(`Got response code outside of 200-299: ${response.status} ${response.statusText}\n` +
-            `Headers: ${response.headers}`);
+            throw new Error(`Got response code outside of 200-299: ${response.status} ${response.statusText}.\n` +
+            `Headers: ${util.inspect(response.headers)}`);
         }
         
         return response;
     } catch (error) {
         console.error(error);
         options.agent = new HttpProxyAgent(ZENROWS_RPOXY_URL);
+        options.method = 'GET';
         let response = await fetch(url, options);
         
         if (!response.ok) {
-            throw new Error(`Got response code outside of 200-299: ${response.status} ${response.statusText}
-            Headers: ${response.headers}`);
+            throw new Error(`Got response code outside of 200-299: ${response.status} ${response.statusText}.\n` +
+            `Headers: ${util.inspect(response.headers)}`);
         }
         
         return response;
