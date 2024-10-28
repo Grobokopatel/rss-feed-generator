@@ -6,7 +6,7 @@ const __dirname = dirname(__filename);
 
 import {HttpsProxyAgent} from "https-proxy-agent";
 import {HttpProxyAgent} from 'http-proxy-agent';
-import fetch from 'node-fetch';
+import fetch, {FetchError} from 'node-fetch';
 import urlNode from "node:url";
 import cons from "@ladjs/consolidate";
 import {Feed} from "feed";
@@ -15,6 +15,9 @@ import {sql} from "@vercel/postgres";
 import path from "node:path";
 import express from "express";
 import {ZenRows} from "zenrows";
+
+const ZENROWS_API_KEY = process.env.ZENROWS_API_KEY;
+const ZENROWS_RPOXY_URL = `http://${ZENROWS_API_KEY}:premium_proxy=true&proxy_country=ru@api.zenrows.com:8001`;
 
 const app = express();
 
@@ -122,7 +125,7 @@ async function getImageEnclosure(imageSelector, url, $cheerioAPI) {
     if (imageUrl === undefined) {
         imageUrl = imageElement.find('img[src]').prop('src');
     }
-    
+
     console.log(url, imageUrl);
     imageUrl = urlNode.resolve(url, imageUrl);
     let imageInfo = await tryFetchElseFetchWithProxy(imageUrl, {method: 'HEAD'});
@@ -177,7 +180,7 @@ app.post('/preview', async (req, res) => {
 
 
 app.get('/proxy_check', async (req, res) => {
-    const agent = new HttpsProxyAgent('http://7dfdf47b924272ba03a425f8311de632c672a69d:premium_proxy=true&proxy_country=ru@api.zenrows.com:8001');
+    const agent = new HttpsProxyAgent(ZENROWS_RPOXY_URL);
     //let headers = {"User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36'};
     let response = await fetch('https://dezk-ur.ru/news/company', {agent});
     let text = await response.text();
@@ -186,7 +189,7 @@ app.get('/proxy_check', async (req, res) => {
 });
 
 app.get('/zenrows_proxy_check', async (req, res) => {
-    const client = new ZenRows("7dfdf47b924272ba03a425f8311de632c672a69d");
+    const client = new ZenRows(ZENROWS_API_KEY);
     const url = "https://dezk-ur.ru/news/company";
 
     try {
@@ -209,13 +212,26 @@ app.get('/zenrows_proxy_check', async (req, res) => {
     }
 });
 
-function tryFetchElseFetchWithProxy(url, options = {}) {
+async function tryFetchElseFetchWithProxy(url, options = {}) {
     try {
-        return fetch(url, options);
+        let response = await fetch(url, options);
+        if (!response.ok) {
+            throw new Error(`Got response code outside of 200-299: ${response.status} ${response.statusText}
+            Headers: ${response.headers}`);
+        }
+        
+        return response;
     } catch (error) {
         console.error(error);
-        options.agent = new HttpProxyAgent('http://7dfdf47b924272ba03a425f8311de632c672a69d:premium_proxy=true&proxy_country=ru@api.zenrows.com:8001');
-        return fetch(url, options);
+        options.agent = new HttpProxyAgent(ZENROWS_RPOXY_URL);
+        let response = await fetch(url, options);
+        
+        if (!response.ok) {
+            throw new Error(`Got response code outside of 200-299: ${response.status} ${response.statusText}
+            Headers: ${response.headers}`);
+        }
+        
+        return response;
     }
 }
 
