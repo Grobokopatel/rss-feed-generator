@@ -133,9 +133,6 @@ async function getImageEnclosure(imageSelector, url, $cheerioAPI) {
     let imageInfo = await tryFetchElseFetchWithProxy(imageUrl, {method: 'HEAD'});
     let headers = imageInfo.headers;
     
-    console.log(headers);
-    console.log(imageInfo.status);
-
     return {
         url: imageUrl,
         type: headers.get('content-type'),
