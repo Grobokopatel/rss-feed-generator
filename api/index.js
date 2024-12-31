@@ -19,8 +19,7 @@ import express from "express";
 import {ZenRows} from "zenrows";
 import * as util from 'node:util';
 
-const ZENROWS_API_KEY = process.env.ZENROWS_API_KEY;
-const ZENROWS_RPOXY_URL = `http://${ZENROWS_API_KEY}:premium_proxy=true&proxy_country=ru&original_status=true@api.zenrows.com:8001`;
+const RUSSIAN_PROXY_URL = process.env.RUSSIAN_PROXY_URL;
 
 const app = express();
 
@@ -190,7 +189,7 @@ async function tryFetchElseFetchWithProxy(url, options = {}) {
         return response;
     } catch (error) {
         console.error(error);
-        options.agent = new HttpProxyAgent(ZENROWS_RPOXY_URL);
+        options.agent = new HttpProxyAgent(RUSSIAN_PROXY_URL);
         options.method = 'GET';
         let response = await fetch(url, options);
         
