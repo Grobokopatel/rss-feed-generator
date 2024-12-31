@@ -189,7 +189,7 @@ async function tryFetchElseFetchWithProxy(url, options = {}) {
         return response;
     } catch (error) {
         console.error(error);
-        options.agent = new HttpProxyAgent(RUSSIAN_PROXY_URL);
+        options.agent = new HttpsProxyAgent(RUSSIAN_PROXY_URL);
         options.method = 'GET';
         let response = await fetch(url, options);
         
