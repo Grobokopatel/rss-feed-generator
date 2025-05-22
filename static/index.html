@@ -7,9 +7,9 @@
 
     <style>
         * {
-            font-size: 20px;    
+            font-size: 20px;
         }
-        
+
         td input {
             width: 600px;
         }
@@ -51,11 +51,41 @@
     <p style="font-size: 22px"> Все поля кроме сайта опциональные, но должен присутствовать хотя бы заголовок или
         описание. </p>
     <div>
-        <button formtarget="_blank" formaction="/preview">Предпросмотр</button>
+        <button formtarget="_blank" formaction="/feed-preview">Предпросмотр</button>
     </div>
     <div>
-        <button>Создать ленту</button>
+        <button type="button" id="create_feed_button">Создать ленту</button>
     </div>
+    <script>
+        document.getElementById("create_feed_button").addEventListener('click', tryCreateFeed);
+
+        async function tryCreateFeed(e) {
+            e.preventDefault();
+            const formData = new URLSearchParams(new FormData(e.target.form));
+            let result = await fetch('/api/create', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: formData.toString()
+            });
+            if (result.ok) {
+                let {id, delete_key, url, tab_title} = await result.json();
+                window.location.replace(`/link-to-feed?id=${id}`);
+                
+                let savedFeeds = localStorage.get('saved-feeds');
+                savedFeeds.append(
+                    {
+                        id,
+                        delete_key,
+                        url,
+                        tab_title
+                    }
+                );
+                localStorage.setItem('saved-feeds', savedFeeds);
+            }
+        }
+    </script>
 </form>
 </body>
 </html>
