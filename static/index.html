@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Создавалка</title>
@@ -7,9 +8,9 @@
 
     <style>
         * {
-            font-size: 20px;    
+            font-size: 20px;
         }
-        
+
         td input {
             width: 600px;
         }
@@ -17,33 +18,39 @@
         button {
             margin-top: 10px;
         }
+
+        .feed-history-entry-sample {
+            margin-top: 10px;
+        }
     </style>
 </head>
+
 <body>
 <form method="post">
     <table>
         <tbody>
         <tr>
             <th><label for="url">Сайт: </label></th>
-            <td><input type="url" name="url" id="url" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+            <td><input type="url" name="url" id="url"
+                       placeholder="https://store.steampowered.com/app/311690/Enter_the_Gungeon/"
                        required></td>
         </tr>
         <tr>
             <th><label for="header">Заголовок: </label></th>
-            <td><input name="title" id="header" placeholder="#game_area_purchase_section_add_to_cart_997630 > h1"></td>
+            <td><input name="title" id="header"
+                       placeholder="#game_area_purchase_section_add_to_cart_46873 > div.game_purchase_action > div > div.game_purchase_price.price">
+            </td>
         </tr>
         <tr>
             <th><label for="description">Описание: </label></th>
-            <td><input name="description"
-                       id="description"
-                       placeholder="#tabletGrid > div.page_content_ctn > div:nth-child(6) > div.leftcol.game_description_column > div:nth-child(13) > div.game_page_autocollapse.sys_req > div > div > div.game_area_sys_req_rightCol > ul">
+            <td><input name="description" id="description"
+                       placeholder="#game_area_description">
             </td>
         </tr>
         <tr>
             <th><label for="image">Картинка: </label></th>
-            <td><input name="image"
-                       id="image"
-                       placeholder="#tabletGrid > div.page_content_ctn > div.related_items_ctn > div > div:nth-child(1) > div > div.pfPilQ4t9RuI9__rVAFW9 > div > div > div._2M3SnYGvMvplWUC8yGhowo.SliderBody > div > div > div > div:nth-child(2) > div > div > div > div > div > div > a > div:nth-child(1) > div > div._2oW_y7Mm3ihf1XQ0C1VWhx.CapsuleImageCtn > img">
+            <td><input name="image" id="image"
+                       placeholder="#gameHeaderImageCtn > img">
             </td>
         </tr>
         </tbody>
@@ -51,11 +58,128 @@
     <p style="font-size: 22px"> Все поля кроме сайта опциональные, но должен присутствовать хотя бы заголовок или
         описание. </p>
     <div>
-        <button formtarget="_blank" formaction="/preview">Предпросмотр</button>
+        <button formtarget="_blank" formaction="/feed-preview">Предпросмотр</button>
     </div>
     <div>
-        <button>Создать ленту</button>
+        <button type="button" id="create_feed_button">Создать ленту</button>
     </div>
 </form>
+<div id="feed-history">
+    <div class="feed-history-entry-sample"
+         style="background-color: #BFBFBF; display: none; border-radius: 8px; padding: 12px; width: 400px; font-family: sans-serif; color: #ccc;">
+        <div class='title' style="font-weight: bold; color: black; word-wrap: break-word">Lorem ipsum dolor sit amet,
+            consectetur adipiscing elit, sed do eiusmod
+        </div>
+        <div class='site-url' style="color: #4C4C4C; font-size: 15px; word-wrap: anywhere">
+            https://LoremipsumdolorsitametconsecteturadipiscingelitQuisque.com/
+        </div>
+        <div style="margin-top: 6px; display: flex; align-items: center; justify-content: space-between;">
+            <a class='link' href="https://Tempusleouaeneanseddiamurnatempor.com/" target="_blank"
+               style="word-wrap: anywhere; color: blue;">https://Tempusleouaeneanseddiamurnatempor.com/</a>
+            <div style="display: flex; gap: 8px;">
+                <button class='copy-button'
+                        style="background: #fff; color: #000; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; transition: background-color 0.3s ease;"
+                        title="Копировать">
+                    📋
+                </button>
+                <button class='delete-button'
+                        style="background: #d33; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"
+                        title="Удалить">
+                    🗑️
+                </button>
+
+            </div>
+        </div>
+        <div class='date' style="font-size: 14px; color: #4C4C4C; margin-top: 6px;">2025-05-17 01:07:18 GMT+5</div>
+    </div>
+
+</div>
+<script>
+    document.getElementById("create_feed_button").addEventListener('click', tryCreateFeed);
+
+    const feed_history_entry_sample = document.querySelector('.feed-history-entry-sample');
+    const feed_history = JSON.parse(localStorage.getItem('saved-feeds')) ?? [];
+
+
+    for (let {id, delete_key, url, tab_title, creation_date} of feed_history) {
+        let feed_url = window.location.protocol + "//" + window.location.host + '/my_feeds/' + id;
+        add_feed_to_history(tab_title, url, feed_url, delete_key, new Date(creation_date).toLocaleDateString());
+    }
+
+    function get_feed_history() {
+        return JSON.parse(localStorage.getItem('saved-feeds')) ?? [];
+    }
+
+    function set_feed_history(arr) {
+        localStorage.setItem('saved-feeds', JSON.stringify(arr));
+    }
+
+    async function tryCreateFeed(e) {
+        e.preventDefault();
+        const formData = new URLSearchParams(new FormData(e.target.form));
+        let result = await fetch('/api/create', {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: formData.toString()
+        });
+        if (result.ok) {
+            let {id, delete_key, url, tab_title, creation_date} = await result.json();
+
+            let feedHistory = get_feed_history();
+            feedHistory.push(
+                {
+                    id,
+                    delete_key,
+                    url,
+                    tab_title,
+                    creation_date
+                }
+            );
+            set_feed_history(feedHistory);
+
+            window.location.replace(`/link-to-feed?id=${id}`);
+        }
+    }
+
+    function add_feed_to_history(title, site, feed_url, delete_key, date) {
+        const feed_history_entry_copy = feed_history_entry_sample.cloneNode(true);
+        feed_history_entry_copy.style.display = 'block';
+        feed_history_entry_copy.querySelector('.title').innerText = title;
+        feed_history_entry_copy.querySelector('.site-url').innerText = site;
+        feed_history_entry_copy.querySelector('.link').innerText = feed_url;
+        feed_history_entry_copy.querySelector('.link').href = feed_url;
+        feed_history_entry_copy.querySelector('.date').innerText = date;
+        feed_history_entry_copy.querySelector('.copy-button').addEventListener('click', function () {
+            navigator.clipboard.writeText(feed_url);
+            this.style.backgroundColor = 'green';
+            setTimeout(() => {
+                this.style.backgroundColor = 'rgb(240, 240, 240)'
+            }, 100);
+        });
+        feed_history_entry_copy.querySelector('.delete-button').addEventListener('click', async () => {
+            let answer = confirm(`Вы действительно хотите удалить эту ленту?\n${feed_url}`);
+            if (answer) {
+                let result = await fetch('/api/delete', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }, body: new URLSearchParams({delete_key}).toString()
+                });
+                if (result.ok) {
+                    feed_history_entry_copy.remove();
+                    let feed_history = get_feed_history();
+                    let index = feed_history.findIndex(e => e.delete_key === delete_key);
+                    feed_history.splice(index, 1);
+                    set_feed_history(feed_history);
+                }
+            }
+        });
+
+        document.querySelector('#feed-history').appendChild(feed_history_entry_copy);
+    }
+</script>
 </body>
+
 </html>
