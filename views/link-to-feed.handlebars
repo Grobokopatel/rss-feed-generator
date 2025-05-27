@@ -13,14 +13,15 @@
 <body>
 <div>
     <label>Лента: </label>
-    <a target="_blank" id='feed-url' href="{{url}}/">{{url}}/</a>
+    <a target="_blank" id='feed-url' href="/my_feeds/{{id}}/"></a>
     <input style="transition: background-color 0.3s ease;" type="button" value="Скопировать">
     <div><a target="_blank" href="/">Создать ещё один фид</a></div>
 </div>
 
 <script>
     document.querySelector('input').addEventListener('click', copyUrl);
-
+    let feed_url_element = document.getElementById('feed-url');
+    feed_url_element.innerText = feed_url_element.href;
     function copyUrl() {
         let feedUrlElement = document.getElementById('feed-url');
         navigator.clipboard.writeText(feedUrlElement.href);
