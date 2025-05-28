@@ -36,6 +36,12 @@
                        required></td>
         </tr>
         <tr>
+            <th><label for="go_to_url">Перейти по ссылке на сайте: </label></th>
+            <td><input name="go_to_url" id="go_to_url"
+                       placeholder="#glanceCtnResponsiveRight > div.glance_tags_ctn.popular_tags_ctn > div.glance_tags.popular_tags > a:nth-child(1)"
+                       required></td>
+        </tr>
+        <tr>
             <th><label for="header">Заголовок: </label></th>
             <td><input name="title" id="header"
                        placeholder="#game_area_purchase_section_add_to_cart_46873 > div.game_purchase_action > div > div.game_purchase_price.price">
@@ -64,9 +70,13 @@
         <button type="button" id="create_feed_button">Создать ленту</button>
     </div>
 </form>
+<div style="margin-top: 10px">
+    <a href="/element-picker.7z" download>Расширение для копирования селекторов на странице</a>
+</div>
 <div id="feed-history">
+    <h2 style="display: none">История:</h2>
     <div class="feed-history-entry-sample"
-         style="background-color: #BFBFBF; display: none; border-radius: 8px; padding: 12px; width: 400px; font-family: sans-serif; color: #ccc;">
+         style="background-color: #BFBFBF; display: none; border-radius: 8px; padding: 12px; width: 500px; font-family: sans-serif; color: #ccc;">
         <div class='title' style="font-weight: bold; color: black; word-wrap: break-word">Lorem ipsum dolor sit amet,
             consectetur adipiscing elit, sed do eiusmod
         </div>
@@ -78,7 +88,7 @@
                style="word-wrap: anywhere; color: blue;">https://Tempusleouaeneanseddiamurnatempor.com/</a>
             <div style="display: flex; gap: 8px;">
                 <button class='copy-button'
-                        style="background: #fff; color: #000; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; transition: background-color 0.3s ease;"
+                        style="margin-left:5px; background: #fff; color: #000; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; transition: background-color 0.3s ease;"
                         title="Копировать">
                     📋
                 </button>
@@ -102,6 +112,7 @@
 
 
     for (let {id, delete_key, url, tab_title, creation_date} of feed_history) {
+        document.querySelector('#feed-history h2').style.display = 'block';
         let feed_url = window.location.protocol + "//" + window.location.host + '/my_feeds/' + id;
         add_feed_to_history(tab_title, url, feed_url, delete_key, new Date(creation_date).toLocaleDateString());
     }

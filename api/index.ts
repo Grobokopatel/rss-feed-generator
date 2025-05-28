@@ -2,9 +2,8 @@ import 'dotenv/config';
 
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import fetch, { RequestInit } from 'node-fetch';
-import { resolve } from 'node:url';
 import cons from '@ladjs/consolidate';
-import { Feed, Item } from 'feed';
+import { Feed } from 'feed';
 import * as cheerio from 'cheerio';
 import { sql } from '@vercel/postgres';
 import { join } from 'node:path';
@@ -26,7 +25,6 @@ app.set('views', join(__dirname, '..', 'views'));
 app.set('view engine', 'handlebars');
 
 app.get('/', (req, res) => {
-    console.log(123);
     res.sendFile(join(__dirname, '..', 'static', 'index.html'));
 });
 
@@ -57,22 +55,21 @@ app.get('/my_feeds/:id', async (req, res) => {
         res.status(404).send(`Нет ленты с таким id: ${public_key}`);
         return;
     } else {
-        let { id, url, selectors, last_time_updated, content } = rows[0];
+        let { id, url, selectors, last_time_updated, content, tab_title } =
+            rows[0];
         try {
-            let response = await tryFetchElseFetchWithProxy(url);
-            let html = await response.text();
-            let $cheerioAPI = await cheerio.load(html);
+            let result = await getTitleDescriptionAndImageEnclosure(
+                selectors,
+                url,
+            );
 
-            let post = {
-                link: url,
-            };
-
-            let { title, description, imageEnclosure } =
-                await getTitleDescriptionAndImageEnclosure(
-                    $cheerioAPI,
-                    selectors,
-                    url,
+            if (result === null) {
+                res.send(
+                    'Не удалось перейти по ссылке на сайте. Попробуйте другой селектор для перехода',
                 );
+            }
+
+            let { title, description, imageEnclosure, newsLink } = result!;
 
             let currentContent =
                 title + ';' + description + ';' + imageEnclosure?.url;
@@ -90,7 +87,7 @@ app.get('/my_feeds/:id', async (req, res) => {
             }
 
             const feed = new Feed({
-                title: $cheerioAPI('title').html() as string,
+                title: tab_title,
                 description: 'Сайт для генерации собственных RSS лент',
                 link: url,
                 language: 'ru',
@@ -102,6 +99,7 @@ app.get('/my_feeds/:id', async (req, res) => {
                 image: imageEnclosure,
                 id: url + '#' + +lastTimeUpdated,
                 date: lastTimeUpdated,
+                link: newsLink,
             });
             let rssPost = feed.rss2();
             res.contentType('text/xml').send(rssPost);
@@ -115,35 +113,57 @@ app.get('/my_feeds/:id', async (req, res) => {
 });
 
 async function getTitleDescriptionAndImageEnclosure(
-    $cheerioAPI: CheerioAPI,
     selectors: FeedSelectors,
     url: string,
 ) {
+    let response = await tryFetchElseFetchWithProxy(url);
+    let html = await response.text();
+    let $cheerioAPI = await cheerio.load(html);
+    let newsLink = url;
+
+    if (selectors.go_to_url) {
+        let root_element = $cheerioAPI(selectors.go_to_url);
+        let go_to_url = root_element.prop('href');
+
+        if (go_to_url === undefined) {
+            go_to_url = root_element.find('a').prop('href');
+
+            if (go_to_url === undefined) {
+                go_to_url = root_element.closest('a').prop('href');
+            }
+        }
+
+        if (go_to_url === undefined) {
+            return null;
+        }
+
+        newsLink = go_to_url;
+        let response = await tryFetchElseFetchWithProxy(go_to_url);
+        let html = await response.text();
+        $cheerioAPI = await cheerio.load(html);
+    }
+
     return {
         title: $cheerioAPI(selectors.title).prop('innerText') as string,
         description: $cheerioAPI(selectors.description).html() as string,
         imageEnclosure: (await getImageEnclosure(
             $cheerioAPI,
             selectors.image,
-            url,
         )) as Enclosure,
+        newsLink,
     };
 }
 
 async function getImageEnclosure(
     $cheerioAPI: CheerioAPI,
     imageSelector: string,
-    url: string,
 ) {
     if (!imageSelector) return null;
 
     let imageElement = $cheerioAPI(imageSelector);
-    let imageUrl = imageElement.prop('src');
-    if (imageUrl === undefined) {
-        imageUrl = imageElement.find('img[src]').prop('src');
-    }
+    let imageUrl = (imageElement.prop('src') ??
+        imageElement.find('img[src]').prop('src')) as string;
 
-    imageUrl = resolve(url, imageUrl as string);
     let imageInfo = await tryFetchElseFetchWithProxy(imageUrl, {
         method: 'HEAD',
     });
@@ -162,6 +182,7 @@ app.post('/api/create', async (req, res) => {
         title: body.title,
         description: body.description,
         image: body.image,
+        go_to_url: body.go_to_url,
     };
 
     let response = await tryFetchElseFetchWithProxy(body.url);
@@ -215,20 +236,25 @@ app.get('/link-to-feed', async (req, res) => {
 
 app.post('/feed-preview', async (req, res) => {
     let body = req.body;
-    let response = await tryFetchElseFetchWithProxy(body.url);
-    let html = await response.text();
-    let $cheerioAPI = await cheerio.load(html);
     let selectors = {
         title: body.title,
         description: body.description,
         image: body.image,
+        go_to_url: body.go_to_url,
     };
-    let { title, description, imageEnclosure } =
-        await getTitleDescriptionAndImageEnclosure(
-            $cheerioAPI,
-            selectors,
-            body.url,
+
+    let result = await getTitleDescriptionAndImageEnclosure(
+        selectors,
+        body.url,
+    );
+    if (result === null) {
+        res.send(
+            'Не удалось перейти по ссылке на сайте. Попробуйте другой селектор для перехода',
         );
+    }
+
+    let { title, description, imageEnclosure } = result!;
+
     res.render('feed-preview', {
         title,
         description,
