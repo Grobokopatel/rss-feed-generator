@@ -149,6 +149,7 @@ async function getTitleDescriptionAndImageEnclosure(
         title: $cheerioAPI(selectors.title).prop('innerText') as string,
         description: $cheerioAPI(selectors.description).html() as string,
         imageEnclosure: (await getImageEnclosure(
+            newsLink,
             $cheerioAPI,
             selectors.image,
         )) as Enclosure,
@@ -157,17 +158,20 @@ async function getTitleDescriptionAndImageEnclosure(
 }
 
 async function getImageEnclosure(
-    url: string,
+    pageUrl: string,
     $cheerioAPI: CheerioAPI,
     imageSelector: string,
 ) {
     if (!imageSelector) return null;
 
     let imageElement = $cheerioAPI(imageSelector);
-    let imageUrl = (imageElement.prop('src') ??
-        imageElement.find('img[src]').prop('src')) as string;
+    let imageUrl =
+        imageElement.prop('src') ?? imageElement.find('img[src]').prop('src');
 
-    imageUrl = resolve(url, imageUrl);
+    if (imageUrl === undefined) {
+        return null;
+    }
+    imageUrl = resolve(pageUrl, imageUrl);
     let imageInfo = await tryFetchElseFetchWithProxy(imageUrl, {
         method: 'HEAD',
     });
