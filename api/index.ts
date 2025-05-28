@@ -192,7 +192,7 @@ app.post('/api/create', async (req, res) => {
     let response = await tryFetchElseFetchWithProxy(body.url);
     let html = await response.text();
     let $cheerioAPI = await cheerio.load(html);
-    let tab_title = $cheerioAPI('title').text();
+    let tab_title = $cheerioAPI('head title').text();
 
     const queryResult = await sql`
         select pg_sequence_last_value(pg_get_serial_sequence('feed', 'id'));`;
