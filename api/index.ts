@@ -13,6 +13,7 @@ import Hashids from 'hashids';
 import { CheerioAPI } from 'cheerio';
 import { FeedSelectors } from '../types/feed-selectors';
 import { Enclosure } from 'feed/lib/typings';
+import { resolve } from 'node:url';
 
 const RUSSIAN_PROXY_URL = process.env.RUSSIAN_PROXY_URL as string;
 
@@ -39,7 +40,7 @@ app.get('/my_feeds/:id', async (req, res) => {
     try {
         // второе условие для обратной совместимости
         queryResult = await sql`
-            select id, url, selectors, last_time_updated, content
+            select id, url, selectors, last_time_updated, content, tab_title
             from feed
             where public_key = ${public_key}
                or id = ${id};
@@ -137,6 +138,7 @@ async function getTitleDescriptionAndImageEnclosure(
             return null;
         }
 
+        go_to_url = resolve(url, go_to_url);
         newsLink = go_to_url;
         let response = await tryFetchElseFetchWithProxy(go_to_url);
         let html = await response.text();
@@ -155,6 +157,7 @@ async function getTitleDescriptionAndImageEnclosure(
 }
 
 async function getImageEnclosure(
+    url: string,
     $cheerioAPI: CheerioAPI,
     imageSelector: string,
 ) {
@@ -164,6 +167,7 @@ async function getImageEnclosure(
     let imageUrl = (imageElement.prop('src') ??
         imageElement.find('img[src]').prop('src')) as string;
 
+    imageUrl = resolve(url, imageUrl);
     let imageInfo = await tryFetchElseFetchWithProxy(imageUrl, {
         method: 'HEAD',
     });
