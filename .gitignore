@@ -1,6 +1,5 @@
 # Мои файлы для тестов
-test.js
-test_imports.js
+test.*
 
 # Rider settings
 .idea/
