@@ -138,7 +138,7 @@
             let {id, delete_key, url, tab_title, creation_date} = await result.json();
 
             let feedHistory = get_feed_history();
-            feedHistory.push(
+            feedHistory.unshift(
                 {
                     id,
                     delete_key,
